@@ -10,6 +10,20 @@ namespace TrajectoryGeneratorNonHolonomeNS
 {
     public class TrajectoryGeneratorNonHolonome
     {
+        public enum Trajectory
+        {
+            Attente,
+            Rotation,
+            Avance,  
+        }
+
+        Trajectory trajectory = Trajectory.Rotation;
+
+
+        float Fech = 50f;
+        
+        
+
         int robotId;
 
         double samplingFreq;
@@ -29,6 +43,8 @@ namespace TrajectoryGeneratorNonHolonomeNS
             robotId = id;
             InitRobotPosition(0, 0, 0);
             InitPositionPID();
+
+            wayPointLocation = new Location(5, 5, 0, 0, 0, 0);
 
             //Initialisation des vitesse et accélérations souhaitées
             accelLineaire = 0.5; //en m.s-2
@@ -65,7 +81,48 @@ namespace TrajectoryGeneratorNonHolonomeNS
 
         void CalculateGhostPosition()
         {
-            //A remplir
+            
+            switch(trajectory)
+            {
+                case Trajectory.Attente :
+
+
+                    break;
+
+                case Trajectory.Rotation:
+                    
+                    float thetaGhostArret = (float) ghostLocationRefTerrain.Vtheta * (float)ghostLocationRefTerrain.Vtheta / ( 2* (float)accelAngulaire);
+                    float thetaGhostCible = (float)Math.Atan2((wayPointLocation.Y - currentLocationRefTerrain.Y), (wayPointLocation.X - currentLocationRefTerrain.X));
+                    float thetaGhostRestant = (float)(thetaGhostCible - Toolbox.ModuloByAngle(thetaGhostCible, ghostLocationRefTerrain.Theta));
+
+                    if (thetaGhostArret < Math.Abs(thetaGhostRestant))
+                    {
+                        if (ghostLocationRefTerrain.Vtheta < vitesseAngulaireMax )
+                        {
+                            ghostLocationRefTerrain.Vtheta += accelAngulaire / Fech;
+                           
+                        }
+                        
+                        else
+                        {
+                            //Rien
+                        }
+                    }
+
+                    else
+                    {
+                        ghostLocationRefTerrain.Vtheta -= accelAngulaire / Fech;
+                    }
+
+                    ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta / (double)Fech;
+
+                    break;
+
+                case Trajectory.Avance:
+
+
+                    break;
+            }
 
             //On renvoie la position du ghost pour affichage
             OnGhostLocation(robotId, ghostLocationRefTerrain);

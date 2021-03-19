@@ -79,6 +79,8 @@ namespace RobotEurobot2Roues
             trajectoryGenerator.OnGhostLocationEvent += localWorldMapManager.OnGhostLocationReceived;
             
 
+            
+
 
 
 
