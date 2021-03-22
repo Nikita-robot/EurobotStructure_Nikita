@@ -44,7 +44,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
             InitRobotPosition(0, 0, 0);
             InitPositionPID();
 
-            wayPointLocation = new Location(5, 5, 0, 0, 0, 0);
+            wayPointLocation = new Location(1, 0.5, 0, 0, 0, 0);
 
             //Initialisation des vitesse et accélérations souhaitées
             accelLineaire = 0.5; //en m.s-2
@@ -91,36 +91,56 @@ namespace TrajectoryGeneratorNonHolonomeNS
 
                 case Trajectory.Rotation:
                     
-                    float thetaGhostArret = (float) ghostLocationRefTerrain.Vtheta * (float)ghostLocationRefTerrain.Vtheta / ( 2* (float)accelAngulaire);
-                    float thetaGhostCible = (float)Math.Atan2((wayPointLocation.Y - currentLocationRefTerrain.Y), (wayPointLocation.X - currentLocationRefTerrain.X));
-                    float thetaGhostRestant = (float)(thetaGhostCible - Toolbox.ModuloByAngle(thetaGhostCible, ghostLocationRefTerrain.Theta));
+                    double thetaGhostArret = ghostLocationRefTerrain.Vtheta * ghostLocationRefTerrain.Vtheta / ( 2* accelAngulaire);
+                    double thetaGhostCible = Math.Atan2((wayPointLocation.Y - currentLocationRefTerrain.Y), (wayPointLocation.X - currentLocationRefTerrain.X));
+                    double thetaGhostRestant = thetaGhostCible - Toolbox.ModuloByAngle(thetaGhostCible, ghostLocationRefTerrain.Theta);
 
                     if (thetaGhostArret < Math.Abs(thetaGhostRestant))
                     {
-                        if (ghostLocationRefTerrain.Vtheta < vitesseAngulaireMax )
-                        {
-                            ghostLocationRefTerrain.Vtheta += accelAngulaire / Fech;
-                           
-                        }
+
                         
+                        if (Math.Abs(ghostLocationRefTerrain.Vtheta) < vitesseAngulaireMax)
+                        {
+                            if (thetaGhostRestant>0)
+                            {
+                                ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
+                            }
+                            else
+                            {
+                                ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
+                            }
+                        }
                         else
                         {
-                            //Rien
+                            //rien
                         }
                     }
 
                     else
                     {
-                        ghostLocationRefTerrain.Vtheta -= accelAngulaire / Fech;
+                        if (thetaGhostRestant > 0)
+                        {
+                            ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
+                        }
+                        else
+                        {
+                            ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
+                        }
+                        
                     }
 
-                    ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta / (double)Fech;
+                    ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta * 1/  Fech;
 
+                    if(thetaGhostRestant < Toolbox.DegToRad(0.2))
+                    {
+                        trajectory = Trajectory.Avance;
+                    }
+                    
                     break;
 
                 case Trajectory.Avance:
 
-
+                    Console.WriteLine("oui");
                     break;
             }
 
