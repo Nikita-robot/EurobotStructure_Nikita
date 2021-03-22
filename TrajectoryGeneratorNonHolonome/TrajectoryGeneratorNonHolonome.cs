@@ -140,7 +140,42 @@ namespace TrajectoryGeneratorNonHolonomeNS
 
                 case Trajectory.Avance:
 
-                    Console.WriteLine("oui");
+                    double dGhostlin = Math.Sqrt(ghostLocationRefTerrain.X * ghostLocationRefTerrain.X + ghostLocationRefTerrain.Y * ghostLocationRefTerrain.Y);
+                    double vGhostlin = Math.Sqrt(ghostLocationRefTerrain.Vx * ghostLocationRefTerrain.Vx + ghostLocationRefTerrain.Vy * ghostLocationRefTerrain.Vy);
+                    double dGhostArret = vGhostlin * vGhostlin / (2 * accelLineaire);
+                    double dGhostCible = Math.Sqrt((wayPointLocation.Y)*(wayPointLocation.Y) + (wayPointLocation.X)*(wayPointLocation.X));
+                    double dGhostRestant = Math.Sqrt((wayPointLocation.Y - ghostLocationRefTerrain.Y) * (wayPointLocation.Y - ghostLocationRefTerrain.Y) + (wayPointLocation.X - ghostLocationRefTerrain.X) * (wayPointLocation.X - ghostLocationRefTerrain.X));
+                    
+                    if(dGhostArret < dGhostRestant )
+                    {
+                        // on accélère
+                        if( vGhostlin < accelLineaire)
+                        {
+                            vGhostlin += accelLineaire / Fech;
+                            
+                            if(dGhostArret > dGhostRestant)
+                            {
+                                vGhostlin -= accelLineaire / Fech;
+                            }
+                        }
+                        else
+                        {
+                            //if (dGhostArret > dGhostlin)
+                            //{
+                            //    vGhostlin -= accelLineaire / Fech;
+                            //}
+                        }                    
+                    }
+                    if (dGhostRestant < dGhostCible)
+                    {
+                        ghostLocationRefTerrain.X += (vGhostlin*Math.Cos(wayPointLocation.Theta)) / Fech;
+                        ghostLocationRefTerrain.Y += (vGhostlin *Math.Sin(wayPointLocation.Theta)) / Fech;
+                    }
+                    
+
+
+
+
                     break;
             }
 
