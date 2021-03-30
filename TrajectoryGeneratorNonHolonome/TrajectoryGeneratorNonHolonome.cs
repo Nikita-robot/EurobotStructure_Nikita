@@ -81,27 +81,27 @@ namespace TrajectoryGeneratorNonHolonomeNS
 
         void CalculateGhostPosition()
         {
-            
-            switch(trajectory)
+
+            switch (trajectory)
             {
-                case Trajectory.Attente :
+                case Trajectory.Attente:
 
 
                     break;
 
                 case Trajectory.Rotation:
-                    
-                    double thetaGhostArret = ghostLocationRefTerrain.Vtheta * ghostLocationRefTerrain.Vtheta / ( 2* accelAngulaire);
+
+                    double thetaGhostArret = ghostLocationRefTerrain.Vtheta * ghostLocationRefTerrain.Vtheta / (2 * accelAngulaire);
                     double thetaGhostCible = Math.Atan2((wayPointLocation.Y - currentLocationRefTerrain.Y), (wayPointLocation.X - currentLocationRefTerrain.X));
                     double thetaGhostRestant = thetaGhostCible - Toolbox.ModuloByAngle(thetaGhostCible, ghostLocationRefTerrain.Theta);
 
                     if (thetaGhostArret < Math.Abs(thetaGhostRestant))
                     {
 
-                        
+
                         if (Math.Abs(ghostLocationRefTerrain.Vtheta) < vitesseAngulaireMax)
                         {
-                            if (thetaGhostRestant>0)
+                            if (thetaGhostRestant > 0)
                             {
                                 ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
                             }
@@ -126,52 +126,67 @@ namespace TrajectoryGeneratorNonHolonomeNS
                         {
                             ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
                         }
-                        
+
                     }
 
-                    ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta * 1/  Fech;
+                    ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta * 1 / Fech;
 
-                    if(thetaGhostRestant < Toolbox.DegToRad(0.2))
+                    if (thetaGhostRestant < Toolbox.DegToRad(0.2))
                     {
                         trajectory = Trajectory.Avance;
                     }
-                    
+
                     break;
 
                 case Trajectory.Avance:
 
-                    double dGhostlin = Math.Sqrt(ghostLocationRefTerrain.X * ghostLocationRefTerrain.X + ghostLocationRefTerrain.Y * ghostLocationRefTerrain.Y);
-                    double vGhostlin = Math.Sqrt(ghostLocationRefTerrain.Vx * ghostLocationRefTerrain.Vx + ghostLocationRefTerrain.Vy * ghostLocationRefTerrain.Vy);
-                    double dGhostArret = vGhostlin * vGhostlin / (2 * accelLineaire);
-                    double dGhostCible = Math.Sqrt((wayPointLocation.Y)*(wayPointLocation.Y) + (wayPointLocation.X)*(wayPointLocation.X));
-                    double dGhostRestant = Math.Sqrt((wayPointLocation.Y - ghostLocationRefTerrain.Y) * (wayPointLocation.Y - ghostLocationRefTerrain.Y) + (wayPointLocation.X - ghostLocationRefTerrain.X) * (wayPointLocation.X - ghostLocationRefTerrain.X));
-                    
-                    if(dGhostArret < dGhostRestant )
+
+                    double proScalaire = ghostLocationRefTerrain.X * wayPointLocation.X + ghostLocationRefTerrain.Y * wayPointLocation.Y ;   // ghost scalaire cible
+                    double normeCibleSquare = wayPointLocation.X * wayPointLocation.X + wayPointLocation.Y * wayPointLocation.Y ;       // norme de cible au carre 
+                    double projeteX = proScalaire / normeCibleSquare * wayPointLocation.X;      // posX du projete  
+                    double projeteY = proScalaire / normeCibleSquare * wayPointLocation.Y;      // posY du projete 
+                    double dprojete = Math.Sqrt(projeteX * projeteX + projeteY * projeteY);      // distance du projete 
+                    double vGhostLin = Math.Sqrt(ghostLocationRefTerrain.Vy * ghostLocationRefTerrain.Vy + ghostLocationRefTerrain.Vx * ghostLocationRefTerrain.Vx);
+
+                    double dCible = Math.Sqrt(normeCibleSquare);
+                    double dGhostRestant = dCible - dprojete;
+                    double dGhostArret = (vGhostLin * vGhostLin) / (2 * accelLineaire);
+
+
+                    if (dprojete < dCible)
                     {
-                        // on accélère
-                        if( vGhostlin < accelLineaire)
+                        if (dGhostArret < dGhostRestant)
                         {
-                            vGhostlin += accelLineaire / Fech;
-                            
-                            if(dGhostArret > dGhostRestant)
+                            // on accélère
+                            if (vGhostLin < vitesseLineaireMax)
                             {
-                                vGhostlin -= accelLineaire / Fech;
+                                vGhostLin += accelLineaire / Fech;
+                                //ghostLocationRefTerrain.X += (vGhostLin * Math.Cos(wayPointLocation.Theta)) / Fech;
+                                //ghostLocationRefTerrain.Y += (vGhostLin * Math.Sin(wayPointLocation.Theta)) / Fech;
+
+                                //if(dGhostArret > dGhostRestant)
+                                //{
+                                //    vGhostLin -= accelLineaire / Fech;
+                                //}
+                            }
+                            else
+                            {
+                                //if (dGhostArret > dGhostlin)
+                                //{
+                                //    vGhostlin -= accelLineaire / Fech;
+                                //}
                             }
                         }
                         else
                         {
-                            //if (dGhostArret > dGhostlin)
-                            //{
-                            //    vGhostlin -= accelLineaire / Fech;
-                            //}
-                        }                    
+                            vGhostLin -= accelLineaire / Fech;
+                            //ghostLocationRefTerrain.X += (vGhostLin*Math.Cos(wayPointLocation.Theta)) / Fech;
+                            //ghostLocationRefTerrain.Y += (vGhostLin *Math.Sin(wayPointLocation.Theta)) / Fech;
+                        }
+
+                        ghostLocationRefTerrain.X +=  Math.Cos(ghostLocationRefTerrain.Theta)* vGhostLin / Fech;
+                        ghostLocationRefTerrain.Y +=  Math.Sin(ghostLocationRefTerrain.Theta)* vGhostLin / Fech;
                     }
-                    if (dGhostRestant < dGhostCible)
-                    {
-                        ghostLocationRefTerrain.X += (vGhostlin*Math.Cos(wayPointLocation.Theta)) / Fech;
-                        ghostLocationRefTerrain.Y += (vGhostlin *Math.Sin(wayPointLocation.Theta)) / Fech;
-                    }
-                    
 
 
 
