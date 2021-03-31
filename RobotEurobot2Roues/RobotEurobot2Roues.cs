@@ -77,7 +77,7 @@ namespace RobotEurobot2Roues
             positioning2Wheels.OnCalculatedLocationEvent += trajectoryGenerator.OnPhysicalPositionReceived;                 //Envoi du positionnement calculé au module de génération de trajectoire
             positioning2Wheels.OnCalculatedLocationEvent += localWorldMapManager.OnPhysicalPositionReceived;
             trajectoryGenerator.OnGhostLocationEvent += localWorldMapManager.OnGhostLocationReceived;
-            
+
 
             
 
