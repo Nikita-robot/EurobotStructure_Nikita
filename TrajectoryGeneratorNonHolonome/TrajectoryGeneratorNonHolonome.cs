@@ -14,7 +14,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
             Recule,
         }
 
-        Trajectory trajectory = Trajectory.Rotation;
+        Trajectory trajectory = Trajectory.Attente;
         
         float Fech = 50f;
         
@@ -23,6 +23,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
         Location currentLocationRefTerrain;
         Location wayPointLocation;
         Location ghostLocationRefTerrain;
+        Location oldGhostLocationRefTerrain;
         
 
         double accelLineaire, accelAngulaire;
@@ -37,7 +38,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
             InitRobotPosition(0, 0, 0);
             InitPositionPID();
 
-            wayPointLocation = new Location(1, 1, 0, 0, 0, 0);
+            //wayPointLocation = new Location(0, 0, 0, 0, 0, 0);
 
             //Initialisation des vitesse et accélérations souhaitées
             accelLineaire = 0.5;// 2; //en m.s-2
@@ -59,8 +60,16 @@ namespace TrajectoryGeneratorNonHolonomeNS
             currentLocationRefTerrain = new Location(x, y, theta, 0, 0, 0);
             wayPointLocation = new Location(x, y, theta, 0, 0, 0);
             ghostLocationRefTerrain = new Location(x, y, theta, 0, 0, 0);
+            oldGhostLocationRefTerrain = new Location(x, y, theta, 0, 0, 0);
             PIDPositionReset();
         }
+
+        //public void SetPosition(object sender, PositionArgs e)
+        //{
+
+        //    wayPointLocation = new Location(e.X, e.Y, 0, 0, 0, 0);
+        //    trajectory = Trajectory.Rotation;
+        //}
 
         public void OnPhysicalPositionReceived(object sender, LocationArgs e)
         {
@@ -77,7 +86,9 @@ namespace TrajectoryGeneratorNonHolonomeNS
             /// Mise à jour du waypoint courant
             wayPointLocation.X = destination.X;
             wayPointLocation.Y = destination.Y;
-
+            ghostLocationRefTerrain.Vtheta = 0;
+            oldGhostLocationRefTerrain.Theta = ghostLocationRefTerrain.Theta; 
+            trajectory = Trajectory.Rotation;
             /// Initialisation de la machine à état de déplacement du Ghost
         }
 
@@ -87,7 +98,9 @@ namespace TrajectoryGeneratorNonHolonomeNS
             switch (trajectory)
             {
                 case Trajectory.Attente:
-
+                    ghostLocationRefTerrain.Vx = 0;
+                    ghostLocationRefTerrain.Vy = 0;
+                    //if()
                     //ghostLocationRefTerrain.Vlin = 0; 
                     //Console.WriteLine( "vitesse : " + ghostLocationRefTerrain.Vlin);
 
@@ -96,16 +109,79 @@ namespace TrajectoryGeneratorNonHolonomeNS
                 case Trajectory.Rotation:
 
                     double thetaGhostArret = ghostLocationRefTerrain.Vtheta * ghostLocationRefTerrain.Vtheta / (2 * accelAngulaire);
-                    double thetaGhostCible = Math.Atan2((wayPointLocation.Y - currentLocationRefTerrain.Y), (wayPointLocation.X - currentLocationRefTerrain.X));
-                    double thetaGhostRestant = thetaGhostCible - Toolbox.ModuloByAngle(thetaGhostCible, ghostLocationRefTerrain.Theta);
+                    double thetaGhostCible = Math.Atan2((wayPointLocation.Y - ghostLocationRefTerrain.Y), (wayPointLocation.X - ghostLocationRefTerrain.X));
+                    double thetaGhostRestant = Math.Abs(thetaGhostCible) - Math.Abs(Toolbox.ModuloByAngle(thetaGhostCible, ghostLocationRefTerrain.Theta));
 
-                    if (thetaGhostArret < Math.Abs(thetaGhostRestant))
+                    if (thetaGhostCible - ghostLocationRefTerrain.Theta > 0 )
                     {
+                        if (thetaGhostArret < Math.Abs(thetaGhostRestant))
+                        {
 
 
-                        if (Math.Abs(ghostLocationRefTerrain.Vtheta) < vitesseAngulaireMax)
+                            if (Math.Abs(ghostLocationRefTerrain.Vtheta) < vitesseAngulaireMax)
+                            {
+                                if (thetaGhostRestant > 0)
+                                {
+                                    ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
+                                }
+                                else
+                                {
+                                    ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
+                                }
+                            }
+                            else
+                            {
+                                //rien
+                            }
+                        }
+
+                        else
                         {
                             if (thetaGhostRestant > 0)
+                            {
+                                ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
+                            }
+                            else
+                            {
+                                ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
+                            }
+
+                        }
+
+                        ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta * 1 / Fech;
+
+                        if (thetaGhostRestant < Toolbox.DegToRad(0.2))
+                        {
+                            trajectory = Trajectory.Avance;
+                        }
+                    }
+
+                    else if (thetaGhostCible - ghostLocationRefTerrain.Theta < 0)
+                    {
+                        if (thetaGhostArret < Math.Abs(thetaGhostRestant))
+                        {
+
+
+                            if (Math.Abs(ghostLocationRefTerrain.Vtheta) < vitesseAngulaireMax)
+                            {
+                                if (Math.Abs(thetaGhostRestant) > 0)
+                                {
+                                    ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
+                                }
+                                else
+                                {
+                                    ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
+                                }
+                            }
+                            else
+                            {
+                                //rien
+                            }
+                        }
+
+                        else
+                        {
+                            if (Math.Abs(thetaGhostRestant) > 0)
                             {
                                 ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
                             }
@@ -113,33 +189,22 @@ namespace TrajectoryGeneratorNonHolonomeNS
                             {
                                 ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
                             }
+
                         }
-                        else
+
+                        ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta * 1 / Fech;
+
+                        if (thetaGhostRestant < Toolbox.DegToRad(0.2))
                         {
-                            //rien
+                            trajectory = Trajectory.Avance;
                         }
+
                     }
 
-                    else
+                    else if (Math.Abs(thetaGhostCible - ghostLocationRefTerrain.Theta) == Math.PI / 2)
                     {
-                        if (thetaGhostRestant > 0)
-                        {
-                            ghostLocationRefTerrain.Vtheta -= accelAngulaire * 1 / Fech;
-                        }
-                        else
-                        {
-                            ghostLocationRefTerrain.Vtheta += accelAngulaire * 1 / Fech;
-                        }
 
                     }
-
-                    ghostLocationRefTerrain.Theta += ghostLocationRefTerrain.Vtheta * 1 / Fech;
-
-                    if (thetaGhostRestant < Toolbox.DegToRad(0.2))
-                    {
-                        trajectory = Trajectory.Avance;
-                    }
-
                     break;
 
                 case Trajectory.Avance:
@@ -158,7 +223,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
                     //vGhostLin est remplace par ghostLocationRefTerrain.Vx
 
                     
-                    if (dGhostArret *2 < dGhostRestant )
+                    if (dGhostArret < dGhostRestant )
                         {
                         // on accélère
                         if (ghostLocationRefTerrain.Vlin < vitesseLineaireMax)
@@ -180,7 +245,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
                                 //}
                         }
                         }
-                    else 
+                    else if(dGhostArret > dGhostRestant)
                     {
                         ghostLocationRefTerrain.Vlin -= accelLineaire / Fech;
                             //ghostLocationRefTerrain.X += (vGhostLin*Math.Cos(wayPointLocation.Theta)) / Fech;
@@ -193,7 +258,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
 
                     Console.WriteLine(" Vitesse : " + ghostLocationRefTerrain.Vlin);
 
-                    if (dGhostRestant < 0.001)
+                    if (dGhostRestant < 0)
                     {
                         trajectory = Trajectory.Attente;
                     }
