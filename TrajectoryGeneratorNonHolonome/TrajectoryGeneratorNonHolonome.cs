@@ -1,9 +1,5 @@
 ﻿using EventArgsLibrary;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Utilities;
 
 namespace TrajectoryGeneratorNonHolonomeNS
@@ -14,19 +10,15 @@ namespace TrajectoryGeneratorNonHolonomeNS
         {
             Attente,
             Rotation,
-            Avance,  
+            Avance, 
+            Recule,
         }
 
         Trajectory trajectory = Trajectory.Rotation;
-
-
+        
         float Fech = 50f;
         
-        
-
         int robotId;
-
-        double samplingFreq;
 
         Location currentLocationRefTerrain;
         Location wayPointLocation;
@@ -157,7 +149,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
                     //vGhostLin est remplace par ghostLocationRefTerrain.Vx
 
                     
-                    if (dGhostArret < dGhostRestant )
+                    if (dGhostArret *2 < dGhostRestant )
                         {
                         // on accélère
                         if (ghostLocationRefTerrain.Vlin < vitesseLineaireMax)
@@ -201,6 +193,13 @@ namespace TrajectoryGeneratorNonHolonomeNS
 
 
                     break;
+
+                case Trajectory.Recule: 
+
+
+
+
+                    break;
             }
 
             //On renvoie la position du ghost pour affichage
@@ -210,7 +209,7 @@ namespace TrajectoryGeneratorNonHolonomeNS
         void PIDPosition()
         {
             //A remplir
-            double vLineaireRobot=0, vAngulaireRobot=0;
+            double vLineaireRobot=0.2, vAngulaireRobot=0;
 
 
             //Si tout c'est bien passé, on envoie les vitesses consigne.
@@ -246,6 +245,12 @@ namespace TrajectoryGeneratorNonHolonomeNS
             {
                 handler(this, new PolarSpeedArgs { RobotId = id, Vx = vLineaire, Vy = 0, Vtheta = vAngulaire});
             }
+        }
+
+        public event EventHandler<StringEventArgs> OnTextMessageEvent;
+        public virtual void OnTextMessage(String message)
+        {
+            OnTextMessageEvent?.Invoke(this, new StringEventArgs { value=message });
         }
     }
 }
