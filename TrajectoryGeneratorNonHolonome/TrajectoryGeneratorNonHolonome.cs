@@ -71,6 +71,15 @@ namespace TrajectoryGeneratorNonHolonomeNS
                 PIDPosition();
             }
         }
+        
+        public void OnWaypointReceived(object sender, PositionArgs destination)
+        {
+            /// Mise à jour du waypoint courant
+            wayPointLocation.X = destination.X;
+            wayPointLocation.Y = destination.Y;
+
+            /// Initialisation de la machine à état de déplacement du Ghost
+        }
 
         void CalculateGhostPosition()
         {
@@ -209,10 +218,11 @@ namespace TrajectoryGeneratorNonHolonomeNS
         void PIDPosition()
         {
             //A remplir
-            double vLineaireRobot=0.2, vAngulaireRobot=0;
-
-
-            //Si tout c'est bien passé, on envoie les vitesses consigne.
+            double vLineaireRobot=0, vAngulaireRobot=0;
+            
+            /// On envoie les vitesses consigne.
+            /// Indispensable en permanence, sinon la sécurité de l'embarqué reset le contrôle moteur
+            /// en l'absence d'orde pendant 200ms
             OnSpeedConsigneToRobot(robotId, (float)vLineaireRobot, (float)vAngulaireRobot);
         }
 
